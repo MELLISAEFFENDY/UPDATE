@@ -129,7 +129,7 @@ local windowConfig = {
     Name = isMobile and "XSAN Fish It Pro Mobile" or "XSAN Fish It Pro v1.0",
     LoadingTitle = "XSAN Fish It Pro Ultimate",
     LoadingSubtitle = "by XSAN - Mobile Optimized",
-    Theme = "DarkBlue",
+    Theme = "Default", -- Changed to Default for better compatibility
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "XSAN",
@@ -275,22 +275,84 @@ end)
 
 -- Ultimate tabs with all features
 print("XSAN: Creating tabs...")
-local InfoTab = Window:CreateTab("INFO", "crown")
+local InfoTab = Window:CreateTab("INFO", 4483362458) -- Use icon ID instead of name
 print("XSAN: InfoTab created")
-local PresetsTab = Window:CreateTab("PRESETS", "zap")
+local PresetsTab = Window:CreateTab("PRESETS", 4483362458) -- Use icon ID instead of name
 print("XSAN: PresetsTab created")
-local MainTab = Window:CreateTab("AUTO FISH", "fish") 
+local MainTab = Window:CreateTab("AUTO FISH", 4483362458) -- Use icon ID instead of name
 print("XSAN: MainTab created")
-local TeleportTab = Window:CreateTab("TELEPORT", "map-pin")
+local TeleportTab = Window:CreateTab("TELEPORT", 4483362458) -- Use icon ID instead of name
 print("XSAN: TeleportTab created")
-local AnalyticsTab = Window:CreateTab("ANALYTICS", "bar-chart")
+local AnalyticsTab = Window:CreateTab("ANALYTICS", 4483362458) -- Use icon ID instead of name
 print("XSAN: AnalyticsTab created")
-local InventoryTab = Window:CreateTab("INVENTORY", "package")
+local InventoryTab = Window:CreateTab("INVENTORY", 4483362458) -- Use icon ID instead of name
 print("XSAN: InventoryTab created")
-local UtilityTab = Window:CreateTab("UTILITY", "settings")
+local UtilityTab = Window:CreateTab("UTILITY", 4483362458) -- Use icon ID instead of name
 print("XSAN: UtilityTab created")
 
 print("XSAN: All tabs created successfully!")
+
+-- Debug tab creation
+task.spawn(function()
+    task.wait(3)
+    local rayfieldGui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("RayfieldLibrary") or game.CoreGui:FindFirstChild("RayfieldLibrary")
+    if rayfieldGui then
+        print("XSAN: Rayfield GUI found, checking tabs...")
+        local tabCount = 0
+        for _, descendant in pairs(rayfieldGui:GetDescendants()) do
+            if descendant:IsA("TextButton") and descendant.Text and (
+                descendant.Text == "INFO" or 
+                descendant.Text == "PRESETS" or 
+                descendant.Text == "AUTO FISH" or 
+                descendant.Text == "TELEPORT" or 
+                descendant.Text == "ANALYTICS" or 
+                descendant.Text == "INVENTORY" or 
+                descendant.Text == "UTILITY"
+            ) then
+                tabCount = tabCount + 1
+                print("XSAN: Found tab:", descendant.Text, "Visible:", descendant.Visible, "Transparency:", descendant.BackgroundTransparency)
+            end
+        end
+        
+        if tabCount == 0 then
+            print("XSAN: WARNING - No tabs found! This might cause black tab issue.")
+            NotifyError("Tab Debug", "⚠️ Tabs not detected!\n\n🔧 Use 'Fix Black Tabs' button in INFO tab\n💡 Or try reloading the script")
+        else
+            print("XSAN: Found", tabCount, "tabs successfully")
+            NotifySuccess("Tab Debug", "✅ Found " .. tabCount .. " tabs!\n\n🎯 If tabs appear black, use fix buttons in INFO tab")
+        end
+    else
+        print("XSAN: ERROR - Rayfield GUI not found!")
+        NotifyError("Tab Debug", "❌ Rayfield GUI not found!\n\nThis may cause display issues.")
+    end
+end)
+
+-- Fix tab visibility issues
+task.spawn(function()
+    task.wait(2)
+    local rayfieldGui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("RayfieldLibrary") or game.CoreGui:FindFirstChild("RayfieldLibrary")
+    if rayfieldGui then
+        -- Fix tab container visibility
+        for _, descendant in pairs(rayfieldGui:GetDescendants()) do
+            if descendant:IsA("Frame") and descendant.Name == "TabContainer" then
+                descendant.BackgroundTransparency = 0
+                descendant.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                descendant.Visible = true
+                print("XSAN: Fixed TabContainer visibility")
+            elseif descendant:IsA("TextButton") and descendant.Parent and descendant.Parent.Name == "TabContainer" then
+                descendant.BackgroundTransparency = 0.1
+                descendant.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                descendant.TextColor3 = Color3.fromRGB(255, 255, 255)
+                descendant.Visible = true
+                print("XSAN: Fixed tab button:", descendant.Text or descendant.Name)
+            elseif descendant:IsA("Frame") and (descendant.Name:find("Tab") or descendant.Name:find("tab")) then
+                descendant.Visible = true
+                descendant.BackgroundTransparency = 0
+                print("XSAN: Fixed tab frame:", descendant.Name)
+            end
+        end
+    end
+end)
 
 -- ═══════════════════════════════════════════════════════════════
 -- FLOATING TOGGLE BUTTON - Hide/Show UI
@@ -1219,6 +1281,65 @@ InfoTab:CreateButton({
         
         fixScrollingFrames()
     end, "fix_scrolling")
+})
+
+InfoTab:CreateButton({ 
+    Name = "🔧 Fix Black Tabs", 
+    Callback = CreateSafeCallback(function() 
+        local function fixTabVisibility()
+            local rayfieldGui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("RayfieldLibrary") or game.CoreGui:FindFirstChild("RayfieldLibrary")
+            if rayfieldGui then
+                local fixedTabs = 0
+                
+                for _, descendant in pairs(rayfieldGui:GetDescendants()) do
+                    -- Fix tab containers
+                    if descendant:IsA("Frame") and (descendant.Name == "TabContainer" or descendant.Name:find("Tab")) then
+                        descendant.BackgroundTransparency = 0
+                        descendant.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                        descendant.Visible = true
+                        fixedTabs = fixedTabs + 1
+                    end
+                    
+                    -- Fix tab buttons
+                    if descendant:IsA("TextButton") and descendant.Parent and descendant.Parent.Name == "TabContainer" then
+                        descendant.BackgroundTransparency = 0.1
+                        descendant.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                        descendant.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        descendant.BorderSizePixel = 1
+                        descendant.BorderColor3 = Color3.fromRGB(100, 100, 100)
+                        descendant.Visible = true
+                        fixedTabs = fixedTabs + 1
+                    end
+                    
+                    -- Fix tab content frames
+                    if descendant:IsA("Frame") and descendant.Name:find("Content") then
+                        descendant.BackgroundTransparency = 0
+                        descendant.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                        descendant.Visible = true
+                    end
+                    
+                    -- Fix any transparent elements
+                    if descendant:IsA("GuiObject") and descendant.BackgroundTransparency >= 1 then
+                        descendant.BackgroundTransparency = 0.1
+                        descendant.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                    end
+                end
+                
+                NotifySuccess("Tab Fix", "✅ Fixed " .. fixedTabs .. " tab elements!\n\n🎯 Tabs should now be visible\n🔄 If still black, try switching themes")
+            else
+                NotifyError("Tab Fix", "❌ Rayfield GUI not found!")
+            end
+        end
+        
+        fixTabVisibility()
+    end, "fix_tabs")
+})
+
+InfoTab:CreateButton({ 
+    Name = "🎨 Change Theme", 
+    Callback = CreateSafeCallback(function() 
+        NotifyInfo("Theme Change", "🎨 Available Themes:\n• Ocean (Current)\n• Default\n• Amethyst\n• DarkBlue\n\n⚠️ Reload script to change theme\n💡 Try different themes if tabs appear black")
+    end, "change_theme")
 })
 
 print("XSAN: INFO tab completed successfully!")
