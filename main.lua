@@ -1107,7 +1107,7 @@ else
 end
 
 TeleportLocations.Events = {
-    ["🌟 Isonade Event"] = CFrame.new(-1442, 135, 1006),
+    ["🌟 Sisypus Statue"] = CFrame.new(-3730.28, -135.08, -1011.05),
     ["🦈 Great White Event"] = CFrame.new(1082, 124, -924),
     ["❄️ Whale Event"] = CFrame.new(2648, 140, 2522),
     ["🔥 Volcano Event"] = CFrame.new(-1888, 164, 330)
