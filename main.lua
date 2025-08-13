@@ -44,6 +44,19 @@ local function Notify(title, text, duration)
     print("XSAN:", title, "-", text)
 end
 
+-- Additional Notification Functions
+local function NotifySuccess(title, message)
+	Notify("XSAN - " .. title, message, 3)
+end
+
+local function NotifyError(title, message)
+	Notify("XSAN ERROR - " .. title, message, 4)
+end
+
+local function NotifyInfo(title, message)
+	Notify("XSAN INFO - " .. title, message, 3)
+end
+
 -- Check basic requirements
 if not LocalPlayer then
     warn("XSAN ERROR: LocalPlayer not found")
@@ -295,36 +308,44 @@ print("XSAN: All tabs created successfully!")
 -- Debug tab creation
 task.spawn(function()
     task.wait(3)
-    local rayfieldGui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("RayfieldLibrary") or game.CoreGui:FindFirstChild("RayfieldLibrary")
-    if rayfieldGui then
-        print("XSAN: Rayfield GUI found, checking tabs...")
-        local tabCount = 0
-        for _, descendant in pairs(rayfieldGui:GetDescendants()) do
-            if descendant:IsA("TextButton") and descendant.Text and (
-                descendant.Text == "INFO" or 
-                descendant.Text == "PRESETS" or 
-                descendant.Text == "AUTO FISH" or 
-                descendant.Text == "TELEPORT" or 
-                descendant.Text == "ANALYTICS" or 
-                descendant.Text == "INVENTORY" or 
-                descendant.Text == "UTILITY"
-            ) then
-                tabCount = tabCount + 1
-                print("XSAN: Found tab:", descendant.Text, "Visible:", descendant.Visible, "Transparency:", descendant.BackgroundTransparency)
+    pcall(function()
+        local rayfieldGui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("RayfieldLibrary") or game.CoreGui:FindFirstChild("RayfieldLibrary")
+        if rayfieldGui then
+            print("XSAN: Rayfield GUI found, checking tabs...")
+            local tabCount = 0
+            for _, descendant in pairs(rayfieldGui:GetDescendants()) do
+                if descendant:IsA("TextButton") and descendant.Text and (
+                    descendant.Text == "INFO" or 
+                    descendant.Text == "PRESETS" or 
+                    descendant.Text == "AUTO FISH" or 
+                    descendant.Text == "TELEPORT" or 
+                    descendant.Text == "ANALYTICS" or 
+                    descendant.Text == "INVENTORY" or 
+                    descendant.Text == "UTILITY"
+                ) then
+                    tabCount = tabCount + 1
+                    print("XSAN: Found tab:", descendant.Text, "Visible:", descendant.Visible, "Transparency:", descendant.BackgroundTransparency)
+                end
+            end
+            
+            if tabCount == 0 then
+                print("XSAN: WARNING - No tabs found! This might cause black tab issue.")
+                if NotifyError then
+                    NotifyError("Tab Debug", "⚠️ Tabs not detected!\n\n🔧 Use 'Fix Black Tabs' button in INFO tab\n💡 Or try reloading the script")
+                end
+            else
+                print("XSAN: Found", tabCount, "tabs successfully")
+                if NotifySuccess then
+                    NotifySuccess("Tab Debug", "✅ Found " .. tabCount .. " tabs!\n\n🎯 If tabs appear black, use fix buttons in INFO tab")
+                end
+            end
+        else
+            print("XSAN: ERROR - Rayfield GUI not found!")
+            if NotifyError then
+                NotifyError("Tab Debug", "❌ Rayfield GUI not found!\n\nThis may cause display issues.")
             end
         end
-        
-        if tabCount == 0 then
-            print("XSAN: WARNING - No tabs found! This might cause black tab issue.")
-            NotifyError("Tab Debug", "⚠️ Tabs not detected!\n\n🔧 Use 'Fix Black Tabs' button in INFO tab\n💡 Or try reloading the script")
-        else
-            print("XSAN: Found", tabCount, "tabs successfully")
-            NotifySuccess("Tab Debug", "✅ Found " .. tabCount .. " tabs!\n\n🎯 If tabs appear black, use fix buttons in INFO tab")
-        end
-    else
-        print("XSAN: ERROR - Rayfield GUI not found!")
-        NotifyError("Tab Debug", "❌ Rayfield GUI not found!\n\nThis may cause display issues.")
-    end
+    end)
 end)
 
 -- Fix tab visibility issues
@@ -437,47 +458,53 @@ task.spawn(function()
     
     -- Toggle UI visibility function
     local function toggleUI()
-        local rayfieldGui = getRayfieldGui()
-        if rayfieldGui then
-            isUIVisible = not isUIVisible
-            
-            -- Update button appearance
-            if isUIVisible then
-                FloatingButton.Text = "🎣"
-                FloatingButton.BackgroundColor3 = Color3.fromRGB(70, 130, 200)
-                rayfieldGui.Enabled = true
+        pcall(function()
+            local rayfieldGui = getRayfieldGui()
+            if rayfieldGui then
+                isUIVisible = not isUIVisible
                 
-                -- Animate show
-                rayfieldGui.Main.BackgroundTransparency = 1
-                TweenService:Create(rayfieldGui.Main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                    BackgroundTransparency = 0
+                -- Update button appearance
+                if isUIVisible then
+                    FloatingButton.Text = "🎣"
+                    FloatingButton.BackgroundColor3 = Color3.fromRGB(70, 130, 200)
+                    rayfieldGui.Enabled = true
+                    
+                    -- Animate show
+                    rayfieldGui.Main.BackgroundTransparency = 1
+                    TweenService:Create(rayfieldGui.Main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                        BackgroundTransparency = 0
+                    }):Play()
+                    
+                    if NotifySuccess then
+                        NotifySuccess("UI Toggle", "XSAN Fish It Pro UI shown!")
+                    end
+                else
+                    FloatingButton.Text = "👁"
+                    FloatingButton.BackgroundColor3 = Color3.fromRGB(200, 100, 100)
+                    
+                    -- Animate hide
+                    TweenService:Create(rayfieldGui.Main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+                        BackgroundTransparency = 1
+                    }):Play()
+                    
+                    task.wait(0.3)
+                    rayfieldGui.Enabled = false
+                    if NotifyInfo then
+                        NotifyInfo("UI Toggle", "UI hidden! Use floating button to show.")
+                    end
+                end
+                
+                -- Button feedback animation
+                TweenService:Create(FloatingButton, TweenInfo.new(0.1, Enum.EasingStyle.Back), {
+                    Size = UDim2.new(0, (isMobile and 70 or 60) * 1.1, 0, (isMobile and 70 or 60) * 1.1)
                 }):Play()
                 
-                NotifySuccess("UI Toggle", "XSAN Fish It Pro UI shown!")
-            else
-                FloatingButton.Text = "👁"
-                FloatingButton.BackgroundColor3 = Color3.fromRGB(200, 100, 100)
-                
-                -- Animate hide
-                TweenService:Create(rayfieldGui.Main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-                    BackgroundTransparency = 1
+                task.wait(0.1)
+                TweenService:Create(FloatingButton, TweenInfo.new(0.2, Enum.EasingStyle.Back), {
+                    Size = UDim2.new(0, isMobile and 70 or 60, 0, isMobile and 70 or 60)
                 }):Play()
-                
-                task.wait(0.3)
-                rayfieldGui.Enabled = false
-                NotifyInfo("UI Toggle", "UI hidden! Use floating button to show.")
             end
-            
-            -- Button feedback animation
-            TweenService:Create(FloatingButton, TweenInfo.new(0.1, Enum.EasingStyle.Back), {
-                Size = UDim2.new(0, (isMobile and 70 or 60) * 1.1, 0, (isMobile and 70 or 60) * 1.1)
-            }):Play()
-            
-            task.wait(0.1)
-            TweenService:Create(FloatingButton, TweenInfo.new(0.2, Enum.EasingStyle.Back), {
-                Size = UDim2.new(0, isMobile and 70 or 60, 0, isMobile and 70 or 60)
-            }):Play()
-        end
+        end)
     end
     
     -- Make button draggable
@@ -1072,19 +1099,6 @@ end
 
 print("XSAN: Found " .. islandCount .. " islands for teleportation")
 print("XSAN: Using dynamic location system like old.lua for accuracy")
-
--- Notification Functions
-local function NotifySuccess(title, message)
-	Notify("XSAN - " .. title, message, 3)
-end
-
-local function NotifyError(title, message)
-	Notify("XSAN ERROR - " .. title, message, 4)
-end
-
-local function NotifyInfo(title, message)
-	Notify("XSAN INFO - " .. title, message, 3)
-end
 
 -- Analytics Functions
 local function CalculateFishPerHour()
