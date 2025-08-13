@@ -963,14 +963,16 @@ else
     print("XSAN: Island folder not found, using updated fallback coordinates")
     TeleportLocations.Islands = {
         -- Updated island coordinates from detector (Latest 2025)
-        ["Kohana Volcano"] = CFrame.new(-594.971252, 396.65213, 149.10907),
-        ["Crater Island"] = CFrame.new(1010.01001, 252, 5078.45117),
-        ["Kohana"] = CFrame.new(-650.971191, 208.693695, 711.10907),
-        ["Lost Isle"] = CFrame.new(-3618.15698, 240.836655, -1317.45801),
-        ["Stingray Shores"] = CFrame.new(45.2788086, 252.562927, 2987.10913),
-        ["Esoteric Depths"] = CFrame.new(1944.77881, 393.562927, 1371.35913),
+        ["Kohana Volcano"] = CFrame.new(-594.98, 40.86, 149.11),
+        ["Crater Island"] = CFrame.new(1010.01, 22.57, 5078.45),
+        ["Kohana"] = CFrame.new(-682.18, 3.04, 719.41),
+        ["Sisypus Statue"] = CFrame.new(-3746.41, -135.08, -1044.32),
+        ["Treasure Hall"] = CFrame.new(-3599.37, -271.69, -1530.96),
+        ["Stingray Shores"] = CFrame.new(45.27, 27.99, 2987.10),
+        ["Esoteric Depths"] = CFrame.new(2098.60, -29.01, 1352.55),
+        ["Enchant Stone"] = CFrame.new(3237.61, -1302.33, 1398.04),
         ["Weather Machine"] = CFrame.new(-1488.51196, 83.1732635, 1876.30298),
-        ["Tropical Grove"] = CFrame.new(-2095.34106, 197.199997, 3718.08008),
+        ["Tropical Grove"] = CFrame.new(-2095.34, 6.26, 3718.08),
         ["Coral Reefs"] = CFrame.new(-3023.97119, 337.812927, 2195.60913),
         -- Legacy coordinates (backup)
         ["Moosewood"] = CFrame.new(389, 137, 264),
@@ -1134,7 +1136,7 @@ end
 
 TeleportLocations.Events = {
     ["🌟 Sisypus Hidden"] = CFrame.new(-3724.60, -102.65, -958.37),
-    ["🦈 Great W Event"] = CFrame.new(1082, 124, -924),
+    ["🦈 Wheater Machine"] = CFrame.new(-1579.19, 20.15, 1901.78),
     ["❄️ Whale Event"] = CFrame.new(2648, 140, 2522),
     ["🔥 Volcano Event"] = CFrame.new(-1888, 164, 330)
 }
@@ -2425,240 +2427,179 @@ end)
 -- ==================== EVENT TAB ====================
 -- Admin Event Detection & Monitoring System
 
-if EventDetector then
-    print("XSAN: Setting up EVENT tab with Admin Event Detection...")
-    
-    -- EVENT DETECTION SECTION
-    EventTab:CreateSection("🚨 Admin Event Detection")
-    
-    -- Event Status Display
-    local EventStatusLabel = EventTab:CreateLabel("📍 Status: Initializing event detection...")
-    
-    -- Detection Controls
-    EventTab:CreateButton({
-        Name = "🔍 Force Scan Events",
-        Callback = function()
-            if EventDetector then
-                EventDetector.ScanForAdminEvents()
-                EventDetector.ScanEventLocations()
-                Notify("Event Scan", "🔍 Manual admin event scan completed!")
-            end
-        end,
-    })
-    
-    local autoScanEnabled = false
-    EventTab:CreateToggle({
-        Name = "⚡ Auto Event Scanning",
-        Default = false,
-        Flag = "AutoEventScan",
-        Callback = function(Value)
-            autoScanEnabled = Value
-            if Value then
-                EventDetector.StartAutoScan()
-                Notify("Auto Scan", "✅ Auto event scanning ENABLED!")
-            else
-                EventDetector.StopAutoScan()
-                Notify("Auto Scan", "❌ Auto event scanning DISABLED")
-            end
-        end,
-    })
-    
-    local autoTeleportEnabled = false
-    EventTab:CreateToggle({
-        Name = "🚀 Auto Teleport to Events",
-        Default = false,
-        Flag = "AutoEventTeleport",
-        Callback = function(Value)
-            autoTeleportEnabled = Value
-            Notify("Auto Teleport", Value and "✅ Auto teleport to new events ENABLED!" or "❌ Auto teleport to events DISABLED")
-        end,
-    })
-    
-    -- EVENT LIST SECTION
-    EventTab:CreateSection("📋 Detected Admin Events")
-    
-    -- Create dynamic event buttons
-    local eventButtons = {}
-    local lastEventCount = 0
-    
-    -- Function to update event display
-    local function UpdateEventDisplay()
-        if not EventDetector then return end
-        
-        local activeEvents, eventCount = EventDetector.GetDetectedEvents()
-        
-        -- Update status label
-        if eventCount > 0 then
-            EventStatusLabel:Set("🚨 " .. eventCount .. " ADMIN EVENT(S) DETECTED!")
-        else
-            EventStatusLabel:Set("🔍 Scanning for admin events...")
-        end
-        
-        -- Clear old buttons if event count changed
-        if eventCount ~= lastEventCount then
-            for _, button in pairs(eventButtons) do
-                if button and button.Destroy then
-                    button:Destroy()
-                end
-            end
-            eventButtons = {}
-            
-            -- Create new buttons for each event
-            for eventName, eventData in pairs(activeEvents) do
-                local eventInfo = EventDetector.adminEventsList[eventName]
-                if eventInfo then
-                    local buttonName = eventInfo.icon .. " " .. eventName
-                    if eventData.position then
-                        buttonName = buttonName .. " 📍"
-                    else
-                        buttonName = buttonName .. " ❓"
-                    end
-                    
-                    local eventButton = EventTab:CreateButton({
-                        Name = buttonName,
-                        Callback = function()
-                            if eventData.position then
-                                EventDetector.TeleportToEvent(eventName)
-                            else
-                                Notify("Event Teleport", "⚠️ " .. eventName .. " location not found yet!")
-                            end
-                        end,
-                    })
-                    
-                    table.insert(eventButtons, eventButton)
-                end
-            end
-            
-            lastEventCount = eventCount
-        end
-        
-        -- Auto teleport logic
-        if autoTeleportEnabled and eventCount > lastEventCount then
-            for eventName, eventData in pairs(activeEvents) do
-                if eventData.position then
-                    Notify("Auto Teleport", "🚀 Auto teleporting to " .. eventName .. "!")
-                    wait(1)
-                    EventDetector.TeleportToEvent(eventName)
-                    break
-                end
-            end
-        end
-    end
-    
-    -- Clear Events Button
-    EventTab:CreateButton({
-        Name = "🗑️ Clear All Events",
-        Callback = function()
-            if EventDetector then
-                for eventName in pairs(EventDetector.detectedEvents) do
-                    EventDetector.detectedEvents[eventName] = nil
-                end
-                for eventName in pairs(EventDetector.eventLocations) do
-                    EventDetector.eventLocations[eventName] = nil
-                end
-                Notify("Clear Events", "🗑️ All detected events cleared!")
-                UpdateEventDisplay()
-            end
-        end,
-    })
-    
-    -- EVENT INFORMATION SECTION
-    EventTab:CreateSection("📊 Event Information")
-    
-    EventTab:CreateLabel("☄️ Meteor Rain - LEGENDARY")
-    EventTab:CreateLabel("Fish in Meteor Rain area for x6 mutation chance!")
-    
-    EventTab:CreateLabel("👻 Ghost Worm - LEGENDARY") 
-    EventTab:CreateLabel("Limited 1 in 1,000,000 Ghost Worm Fish!")
-    
-    EventTab:CreateLabel("🐙 Kraken Event - MYTHIC")
-    EventTab:CreateLabel("Legendary Kraken has appeared!")
-    
-    EventTab:CreateLabel("🐋 Whale Event - EPIC")
-    EventTab:CreateLabel("Giant Whale sighting!")
-    
-    EventTab:CreateLabel("🌌 Aurora Event - RARE")
-    EventTab:CreateLabel("Aurora Borealis event!")
-    
-    EventTab:CreateLabel("🌊 Tsunami Event - EPIC")
-    EventTab:CreateLabel("Massive Tsunami incoming!")
-    
-    -- EVENT UTILITIES SECTION
-    EventTab:CreateSection("🛠️ Event Utilities")
-    
-    EventTab:CreateButton({
-        Name = "📱 Open Standalone Monitor",
-        Callback = function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/MELLISAEFFENDY/UPDATE/main/Detector/admin_event_monitor.lua"))()
-            Notify("Event Monitor", "📱 Standalone Admin Event Monitor opened!")
-        end,
-    })
-    
-    EventTab:CreateButton({
-        Name = "🔄 Reload Event Detector",
-        Callback = function()
-            pcall(function()
-                local detectorContent = game:HttpGet("https://raw.githubusercontent.com/MELLISAEFFENDY/UPDATE/main/Detector/admin_event_detector.lua")
-                if detectorContent and #detectorContent > 0 then
-                    local detectorFunc = loadstring(detectorContent)
-                    if detectorFunc then
-                        EventDetector = detectorFunc()
-                        Notify("Event Detector", "🔄 Admin Event Detector reloaded successfully!")
+print("XSAN: Setting up EVENT tab...")
+
+-- Always create basic content first to prevent black screen
+EventTab:CreateSection("🚨 Admin Event Detection")
+EventTab:CreateLabel("📍 Event detection system loading...")
+
+-- Simple event scanner function that always works
+local function SimpleEventScan()
+    local found = {}
+    pcall(function()
+        local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+        for _, gui in pairs(playerGui:GetChildren()) do
+            if gui:IsA("ScreenGui") then
+                for _, descendant in pairs(gui:GetDescendants()) do
+                    if descendant:IsA("TextLabel") and descendant.Text then
+                        local text = descendant.Text:lower()
+                        if text:find("meteor") and text:find("rain") then
+                            table.insert(found, "☄️ Meteor Rain")
+                        elseif text:find("ghost") and text:find("worm") then
+                            table.insert(found, "👻 Ghost Worm")
+                        elseif text:find("admin") and text:find("event") then
+                            table.insert(found, "🚨 Admin Event")
+                        end
                     end
                 end
-            end)
-        end,
-    })
-    
-    -- Auto-update system for EVENT tab
-    spawn(function()
-        while true do
-            wait(3) -- Update every 3 seconds
-            pcall(UpdateEventDisplay)
+            end
         end
     end)
-    
-    -- Start initial auto-scan
-    spawn(function()
-        wait(2)
-        if EventDetector then
-            EventDetector.StartAutoScan()
-            Notify("Event Detector", "🚨 Admin Event Detection started!\n\n🔍 Auto-scanning for events\n📍 Location tracking active\n☄️ Meteor Rain support\n👻 Ghost Worm detection")
-        end
-    end)
-    
-    print("XSAN: EVENT tab setup completed with Admin Event Detection!")
-else
-    print("XSAN: EVENT tab setup failed - EventDetector not available")
-    
-    -- Fallback EVENT tab without detector
-    EventTab:CreateSection("🚨 Admin Event Detection")
-    EventTab:CreateLabel("⚠️ Event Detector failed to load")
-    
-    EventTab:CreateButton({
-        Name = "🔄 Retry Loading Detector",
-        Callback = function()
-            pcall(function()
-                local detectorContent = game:HttpGet("https://raw.githubusercontent.com/MELLISAEFFENDY/UPDATE/main/Detector/admin_event_detector.lua")
-                if detectorContent and #detectorContent > 0 then
-                    local detectorFunc = loadstring(detectorContent)
-                    if detectorFunc then
-                        EventDetector = detectorFunc()
-                        Notify("Event Detector", "✅ Admin Event Detector loaded successfully!")
-                    end
-                end
-            end)
-        end,
-    })
-    
-    EventTab:CreateButton({
-        Name = "📱 Open Standalone Monitor",
-        Callback = function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/MELLISAEFFENDY/UPDATE/main/Detector/admin_event_monitor.lua"))()
-            Notify("Event Monitor", "📱 Standalone Admin Event Monitor opened!")
-        end,
-    })
+    return found
 end
+
+-- EVENT SCANNER SECTION
+EventTab:CreateButton({
+    Name = "🔍 Scan for Events",
+    Callback = function()
+        local events = SimpleEventScan()
+        if #events > 0 then
+            Notify("Events Found!", "🚨 Found: " .. table.concat(events, ", "))
+        else
+            Notify("Scan Complete", "No admin events found currently")
+        end
+    end,
+})
+
+EventTab:CreateButton({
+    Name = "☄️ Quick Scan - Meteor Rain",
+    Callback = function()
+        local found = false
+        pcall(function()
+            local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+            for _, gui in pairs(playerGui:GetChildren()) do
+                if gui:IsA("ScreenGui") then
+                    for _, descendant in pairs(gui:GetDescendants()) do
+                        if descendant:IsA("TextLabel") and descendant.Text then
+                            local text = descendant.Text:lower()
+                            if text:find("meteor") and text:find("rain") then
+                                found = true
+                                Notify("Event Found!", "☄️ Meteor Rain detected!")
+                                break
+                            end
+                        end
+                    end
+                    if found then break end
+                end
+            end
+        end)
+        if not found then
+            Notify("Scan Result", "No Meteor Rain event found")
+        end
+    end,
+})
+
+EventTab:CreateButton({
+    Name = "� Quick Scan - Ghost Worm",
+    Callback = function()
+        local found = false
+        pcall(function()
+            local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+            for _, gui in pairs(playerGui:GetChildren()) do
+                if gui:IsA("ScreenGui") then
+                    for _, descendant in pairs(gui:GetDescendants()) do
+                        if descendant:IsA("TextLabel") and descendant.Text then
+                            local text = descendant.Text:lower()
+                            if text:find("ghost") and text:find("worm") then
+                                found = true
+                                Notify("Event Found!", "👻 Ghost Worm detected!")
+                                break
+                            end
+                        end
+                    end
+                    if found then break end
+                end
+            end
+        end)
+        if not found then
+            Notify("Scan Result", "No Ghost Worm event found")
+        end
+    end,
+})
+
+-- ADVANCED FEATURES SECTION
+EventTab:CreateSection("⚙️ Advanced Features")
+
+EventTab:CreateButton({
+    Name = "📱 Open Event Monitor",
+    Callback = function()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/MELLISAEFFENDY/UPDATE/main/Detector/admin_event_monitor.lua"))()
+            Notify("Event Monitor", "📱 Standalone Event Monitor opened!")
+        end)
+    end,
+})
+
+EventTab:CreateButton({
+    Name = "🔄 Try Load Full Detector",
+    Callback = function()
+        Notify("Loading", "🔄 Loading advanced event detector...")
+        pcall(function()
+            local detectorContent = game:HttpGet("https://raw.githubusercontent.com/MELLISAEFFENDY/UPDATE/main/Detector/admin_event_detector.lua")
+            if detectorContent and #detectorContent > 0 then
+                local detectorFunc = loadstring(detectorContent)
+                if detectorFunc then
+                    EventDetector = detectorFunc()
+                    Notify("Success", "✅ Advanced event detector loaded!")
+                else
+                    Notify("Error", "Failed to compile detector")
+                end
+            else
+                Notify("Error", "Failed to fetch detector")
+            end
+        end)
+    end,
+})
+
+-- EVENT INFO SECTION
+EventTab:CreateSection("📊 Event Information")
+EventTab:CreateLabel("☄️ Meteor Rain - LEGENDARY")
+EventTab:CreateLabel("Fish for x6 mutation chance!")
+EventTab:CreateLabel("👻 Ghost Worm - LEGENDARY")
+EventTab:CreateLabel("1 in 1,000,000 chance!")
+EventTab:CreateLabel("🐙 Kraken Event - MYTHIC")
+EventTab:CreateLabel("🐋 Whale Event - EPIC")
+EventTab:CreateLabel("🌌 Aurora Event - RARE")
+EventTab:CreateLabel("🌊 Tsunami Event - EPIC")
+
+-- AUTO SCANNER
+EventTab:CreateSection("🤖 Auto Scanner")
+local autoScanActive = false
+EventTab:CreateToggle({
+    Name = "🔄 Auto Event Scanning",
+    Default = false,
+    Callback = function(Value)
+        autoScanActive = Value
+        if Value then
+            Notify("Auto Scan", "✅ Auto event scanning enabled!")
+            spawn(function()
+                while autoScanActive do
+                    local events = SimpleEventScan()
+                    if #events > 0 then
+                        print("XSAN Auto-Scan: Found events -", table.concat(events, ", "))
+                    end
+                    wait(5)
+                end
+            end)
+        else
+            Notify("Auto Scan", "❌ Auto event scanning disabled")
+        end
+    end,
+})
+
+print("XSAN: EVENT tab setup completed with fallback system!")
+        Name = "⚡ Auto Event Scanning",
+print("XSAN: EVENT tab setup completed with fallback system!")
 
 -- Welcome Messages
 spawn(function()
