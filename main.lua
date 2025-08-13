@@ -803,6 +803,116 @@ end)
 
 print("XSAN: Walkspeed system initialized!")
 
+-- ═══════════════════════════════════════════════════════════════
+-- UNLIMITED JUMP SYSTEM
+-- ═══════════════════════════════════════════════════════════════
+local unlimitedJumpEnabled = false
+local currentJumpHeight = 7.2 -- Default Roblox jump height
+local defaultJumpHeight = 7.2
+local unlimitedJumpConnection = nil
+
+local function setJumpHeight(height)
+    local success, error = pcall(function()
+        local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.JumpHeight = height
+            currentJumpHeight = height
+            NotifySuccess("Jump Height", "Jump height set to " .. height)
+        else
+            NotifyError("Jump Height", "Character or Humanoid not found")
+        end
+    end)
+    
+    if not success then
+        NotifyError("Jump Height", "Failed to set jump height: " .. tostring(error))
+    end
+end
+
+local function enableUnlimitedJump()
+    if unlimitedJumpEnabled then return end
+    
+    unlimitedJumpEnabled = true
+    
+    local success, error = pcall(function()
+        local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            -- Method 1: Set very high jump height
+            humanoid.JumpHeight = 50
+            currentJumpHeight = 50
+            
+            -- Method 2: Enable infinite jumps via UserInputService
+            if UserInputService then
+                unlimitedJumpConnection = UserInputService.JumpRequest:Connect(function()
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                        LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+                end)
+            end
+            
+            NotifySuccess("Unlimited Jump", "✅ Unlimited Jump ENABLED!\n\n🚀 Jump height: 50\n⚡ Infinite jumps: Active\n🎯 Press space repeatedly to fly!")
+        else
+            NotifyError("Unlimited Jump", "Character or Humanoid not found!")
+        end
+    end)
+    
+    if not success then
+        NotifyError("Unlimited Jump", "Failed to enable unlimited jump: " .. tostring(error))
+        unlimitedJumpEnabled = false
+    end
+end
+
+local function disableUnlimitedJump()
+    if not unlimitedJumpEnabled then return end
+    
+    unlimitedJumpEnabled = false
+    
+    local success, error = pcall(function()
+        local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.JumpHeight = defaultJumpHeight
+            currentJumpHeight = defaultJumpHeight
+        end
+        
+        -- Disconnect infinite jump connection
+        if unlimitedJumpConnection then
+            unlimitedJumpConnection:Disconnect()
+            unlimitedJumpConnection = nil
+        end
+        
+        NotifyInfo("Unlimited Jump", "❌ Unlimited Jump DISABLED\n\n📉 Jump height: Normal (7.2)\n🚫 Infinite jumps: Disabled")
+    end)
+    
+    if not success then
+        NotifyError("Unlimited Jump", "Failed to disable unlimited jump: " .. tostring(error))
+    end
+end
+
+local function toggleUnlimitedJump()
+    if unlimitedJumpEnabled then
+        disableUnlimitedJump()
+    else
+        enableUnlimitedJump()
+    end
+end
+
+-- Auto-restore unlimited jump when character spawns
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1) -- Wait for character to fully load
+    if unlimitedJumpEnabled then
+        -- Re-enable unlimited jump for new character
+        local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.JumpHeight = 50
+            NotifyInfo("Character Spawn", "🔄 Unlimited Jump restored for new character!")
+        end
+    elseif currentJumpHeight ~= defaultJumpHeight then
+        -- Restore custom jump height
+        setJumpHeight(currentJumpHeight)
+    end
+end)
+
+print("XSAN: Unlimited Jump system initialized!")
+
 -- XSAN Ultimate Teleportation System
 print("XSAN: Initializing teleportation system...")
 
@@ -2118,6 +2228,90 @@ UtilityTab:CreateButton({
         end
         NotifyInfo("Walk Speed", "Walk speed reset to default (" .. defaultWalkspeed .. ")")
     end, "reset_walkspeed")
+})
+
+-- ═══════════════════════════════════════════════════════════════
+-- UNLIMITED JUMP CONTROLS
+-- ═══════════════════════════════════════════════════════════════
+
+UtilityTab:CreateParagraph({
+    Title = "🚀 Unlimited Jump System",
+    Content = "Enhanced jumping capabilities with infinite jumps and custom jump heights for ultimate mobility."
+})
+
+UtilityTab:CreateToggle({
+    Name = "🚀 Enable Unlimited Jump",
+    CurrentValue = unlimitedJumpEnabled,
+    Flag = "UnlimitedJumpToggle",
+    Callback = CreateSafeCallback(function(value)
+        if value then
+            enableUnlimitedJump()
+        else
+            disableUnlimitedJump()
+        end
+    end, "unlimited_jump_toggle")
+})
+
+UtilityTab:CreateSlider({
+    Name = "Jump Height",
+    Range = {7.2, 100},
+    Increment = 0.5,
+    CurrentValue = defaultJumpHeight,
+    Flag = "JumpHeightSlider",
+    Callback = CreateSafeCallback(function(value)
+        if not unlimitedJumpEnabled then
+            setJumpHeight(value)
+            NotifyInfo("Jump Height", "Custom jump height: " .. value .. "\n💡 Enable Unlimited Jump for infinite jumps!")
+        else
+            currentJumpHeight = value
+            setJumpHeight(value)
+            NotifyInfo("Jump Height", "Jump height updated: " .. value .. " (Unlimited mode)")
+        end
+    end, "jump_height_slider")
+})
+
+UtilityTab:CreateButton({
+    Name = "🎯 Quick Jump: Super High (75)",
+    Callback = CreateSafeCallback(function()
+        currentJumpHeight = 75
+        setJumpHeight(75)
+        -- Update the slider if it exists
+        if Rayfield.Flags["JumpHeightSlider"] then
+            Rayfield.Flags["JumpHeightSlider"]:Set(75)
+        end
+        NotifySuccess("Jump Height", "🚀 Super high jump enabled!\n\nHeight: 75\n💡 Enable Unlimited Jump for infinite jumps!")
+    end, "super_jump")
+})
+
+UtilityTab:CreateButton({
+    Name = "⚡ Quick: Unlimited Mode",
+    Callback = CreateSafeCallback(function()
+        if not unlimitedJumpEnabled then
+            enableUnlimitedJump()
+            -- Update toggle if it exists
+            if Rayfield.Flags["UnlimitedJumpToggle"] then
+                Rayfield.Flags["UnlimitedJumpToggle"]:Set(true)
+            end
+        else
+            NotifyInfo("Unlimited Jump", "✅ Already enabled!\n\n🚀 Press space repeatedly to fly\n📏 Adjust height with slider above")
+        end
+    end, "quick_unlimited")
+})
+
+UtilityTab:CreateButton({
+    Name = "🔄 Reset Jump Height",
+    Callback = CreateSafeCallback(function()
+        disableUnlimitedJump()
+        setJumpHeight(defaultJumpHeight)
+        -- Update controls if they exist
+        if Rayfield.Flags["JumpHeightSlider"] then
+            Rayfield.Flags["JumpHeightSlider"]:Set(defaultJumpHeight)
+        end
+        if Rayfield.Flags["UnlimitedJumpToggle"] then
+            Rayfield.Flags["UnlimitedJumpToggle"]:Set(false)
+        end
+        NotifyInfo("Jump Height", "Jump height reset to default (" .. defaultJumpHeight .. ")")
+    end, "reset_jump")
 })
 
 UtilityTab:CreateButton({ 
