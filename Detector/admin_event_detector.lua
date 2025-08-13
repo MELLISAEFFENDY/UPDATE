@@ -74,6 +74,12 @@ local adminEventsList = {
         rarity = "LEGENDARY",
         description = "Limited 1 in 1,000,000 Ghost Worm Fish!"
     },
+    ["Meteor Rain"] = {
+        keywords = {"meteor", "rain", "meteorrain"},
+        icon = "☄️",
+        rarity = "LEGENDARY",
+        description = "Fish in Meteor Rain area for x6 mutation chance!"
+    },
     ["Kraken Event"] = {
         keywords = {"kraken", "tentacle"},
         icon = "🐙",
@@ -112,8 +118,9 @@ local function ScanForAdminEvents()
                     if descendant:IsA("TextLabel") or descendant:IsA("TextButton") then
                         local text = descendant.Text:lower()
                         
-                        -- Check for admin event indicators
-                        if text:find("admin") and text:find("event") then
+                        -- Method A: Check for direct admin event notifications (like the blue box in screenshot)
+                        if text:find("admin event") or text:find("limited time") then
+                            -- Check for specific events in the text
                             for eventName, eventData in pairs(adminEventsList) do
                                 for _, keyword in pairs(eventData.keywords) do
                                     if text:find(keyword) then
@@ -139,10 +146,68 @@ local function ScanForAdminEvents()
                                 end
                             end
                         end
+                        
+                        -- Method B: Check for event keywords directly
+                        for eventName, eventData in pairs(adminEventsList) do
+                            for _, keyword in pairs(eventData.keywords) do
+                                if text:find(keyword) and (text:find("event") or text:find("rain") or text:find("worm")) then
+                                    if not detectedEvents[eventName] then
+                                        detectedEvents[eventName] = {
+                                            startTime = tick(),
+                                            detected = true,
+                                            location = nil,
+                                            gui = descendant
+                                        }
+                                        
+                                        Notify("🚨 ADMIN EVENT DETECTED!", 
+                                            eventData.icon .. " " .. eventName .. " ACTIVE!\n\n" ..
+                                            "📍 Scanning for location...\n" ..
+                                            "⭐ " .. eventData.rarity .. " Event\n" ..
+                                            "📝 " .. eventData.description,
+                                            8
+                                        )
+                                        
+                                        print("XSAN: Admin Event Detected -", eventName)
+                                    end
+                                end
+                            end
+                        end
                     end
                 end
             end
         end
+        
+        -- Method 2: Check StarterGui notifications
+        pcall(function()
+            for _, notification in pairs(StarterGui.CoreGui:GetDescendants()) do
+                if notification:IsA("TextLabel") then
+                    local text = notification.Text:lower()
+                    if text:find("admin") or text:find("event") then
+                        for eventName, eventData in pairs(adminEventsList) do
+                            for _, keyword in pairs(eventData.keywords) do
+                                if text:find(keyword) then
+                                    if not detectedEvents[eventName] then
+                                        detectedEvents[eventName] = {
+                                            startTime = tick(),
+                                            detected = true,
+                                            location = nil,
+                                            gui = notification
+                                        }
+                                        
+                                        Notify("🚨 ADMIN EVENT DETECTED!", 
+                                            eventData.icon .. " " .. eventName .. " ACTIVE!\n\n" ..
+                                            "📍 From CoreGui notifications\n" ..
+                                            "⭐ " .. eventData.rarity .. " Event",
+                                            6
+                                        )
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end)
     end)
 end
 
