@@ -84,7 +84,7 @@ local success, error = pcall(function()
     print("XSAN: Attempting to load UI...")
     
     -- Try ui_fixed.lua first (more stable)
-    local uiContent = game:HttpGet("https://raw.githubusercontent.com/donitono/part2/main/ui_fixed.lua")
+    local uiContent = game:HttpGet("https://raw.githubusercontent.com/MELLISAEFFENDY/UPDATE/main/ui_fixed.lua")
     if uiContent and #uiContent > 0 then
         print("XSAN: Loading stable UI library...")
         print("XSAN: UI content length:", #uiContent)
@@ -766,20 +766,146 @@ else
     }
 end
 
--- NPCs and Events (keeping some hardcoded for important locations)
-TeleportLocations.NPCs = {
-    ["🛒 Shop (Alex)"] = CFrame.new(-31.1000938, 4.83749962, 2899.03467),
-    ["🛒 Shop (Joe)"] = CFrame.new(114.387497, 4.75, 2882.375),
-    ["🛒 Shop (Seth)"] = CFrame.new(70.9577866, 4.83749866, 2895.35791),
-    ["⚓ Boat Expert"] = CFrame.new(23.3880005, 4.69999981, 2804.15894),
-    ["🔬 Scientist"] = CFrame.new(-8.64041519, 4.5, 2849.56982),
-    ["🐟 Billy Bob"] = CFrame.new(72.0547256, 30.5000019, 2950.63428),
-    ["🎣 Silly Fisherman"] = CFrame.new(93.5334473, 27.2446995, 3009.07666),
-    ["🐧 Scott"] = CFrame.new(-81.9389648, 4.79999971, 2866.58545),
+-- NPCs Detection System - Real-time accurate locations
+local function DetectNPCLocations()
+    local detectedNPCs = {}
+    
+    -- Method 1: Check ReplicatedStorage NPCs (Most Accurate)
+    local npcContainer = ReplicatedStorage:FindFirstChild("NPC")
+    if npcContainer then
+        print("XSAN: Scanning ReplicatedStorage NPCs...")
+        for _, npc in pairs(npcContainer:GetChildren()) do
+            if npc:FindFirstChild("WorldPivot") then
+                local pos = npc.WorldPivot.Position
+                local emoji = "👤"
+                
+                -- Add specific emojis based on NPC names
+                if string.find(npc.Name:lower(), "alex") or string.find(npc.Name:lower(), "shop") then
+                    emoji = "🛒"
+                elseif string.find(npc.Name:lower(), "marc") or string.find(npc.Name:lower(), "rod") then
+                    emoji = "🎣"
+                elseif string.find(npc.Name:lower(), "henry") or string.find(npc.Name:lower(), "storage") then
+                    emoji = "📦"
+                elseif string.find(npc.Name:lower(), "scientist") then
+                    emoji = "🔬"
+                elseif string.find(npc.Name:lower(), "boat") then
+                    emoji = "⚓"
+                elseif string.find(npc.Name:lower(), "angler") then
+                    emoji = "🏆"
+                elseif string.find(npc.Name:lower(), "scott") then
+                    emoji = "🐧"
+                elseif string.find(npc.Name:lower(), "billy") or string.find(npc.Name:lower(), "bob") then
+                    emoji = "🐟"
+                elseif string.find(npc.Name:lower(), "fish") then
+                    emoji = "🎣"
+                end
+                
+                detectedNPCs[emoji .. " " .. npc.Name] = CFrame.new(pos)
+                print("XSAN: Found NPC -", npc.Name, "at", pos)
+            end
+        end
+    end
+    
+    -- Method 2: Check Workspace NPCs (Backup method)
+    print("XSAN: Scanning Workspace NPCs...")
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Name ~= LocalPlayer.Name then
+            -- Skip player characters
+            local isPlayerCharacter = false
+            for _, player in pairs(Players:GetPlayers()) do
+                if player.Character and player.Character == obj then
+                    isPlayerCharacter = true
+                    break
+                end
+            end
+            
+            if not isPlayerCharacter then
+                local rootPart = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Torso")
+                if rootPart then
+                    local emoji = "👤"
+                    
+                    -- Check if this NPC is important (not already detected)
+                    local isImportant = false
+                    local npcName = obj.Name
+                    
+                    if string.find(npcName:lower(), "alex") or string.find(npcName:lower(), "shop") then
+                        emoji = "🛒"
+                        isImportant = true
+                    elseif string.find(npcName:lower(), "marc") or string.find(npcName:lower(), "rod") then
+                        emoji = "🎣"
+                        isImportant = true
+                    elseif string.find(npcName:lower(), "henry") or string.find(npcName:lower(), "storage") then
+                        emoji = "📦"
+                        isImportant = true
+                    elseif string.find(npcName:lower(), "scientist") then
+                        emoji = "🔬"
+                        isImportant = true
+                    elseif string.find(npcName:lower(), "boat") then
+                        emoji = "⚓"
+                        isImportant = true
+                    elseif string.find(npcName:lower(), "angler") then
+                        emoji = "🏆"
+                        isImportant = true
+                    end
+                    
+                    if isImportant then
+                        local key = emoji .. " " .. npcName
+                        if not detectedNPCs[key] then -- Only add if not already detected
+                            detectedNPCs[key] = rootPart.CFrame
+                            print("XSAN: Found Workspace NPC -", npcName, "at", rootPart.Position)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    return detectedNPCs
+end
+
+-- Initialize NPCs with real-time detection
+print("XSAN: Detecting NPC locations in real-time...")
+local detectedNPCs = DetectNPCLocations()
+
+-- Updated fallback NPCs (Latest 2025 coordinates - Only used if detection fails)
+local fallbackNPCs = {
+    -- Primary NPCs (Most frequently used)
+    ["🛒 Shop (Alex)"] = CFrame.new(-31.10, 4.84, 2899.03),
     ["🎣 Rod Shop (Marc)"] = CFrame.new(454, 150, 229),
-    ["📦 Storage (Henry)"] = CFrame.new(491, 150, 272),
-    ["🏆 Angler"] = CFrame.new(484, 150, 331)
+    ["� Storage (Henry)"] = CFrame.new(491, 150, 272),
+    ["🏆 Angler"] = CFrame.new(484, 150, 331),
+    
+    -- Secondary NPCs (Backup only)
+    ["�🛒 Shop (Joe)"] = CFrame.new(114.39, 4.75, 2882.38),
+    ["🛒 Shop (Seth)"] = CFrame.new(70.96, 4.84, 2895.36),
+    ["⚓ Boat Expert"] = CFrame.new(23.39, 4.70, 2804.16),
+    ["🔬 Scientist"] = CFrame.new(-8.64, 4.50, 2849.57),
+    ["🐟 Billy Bob"] = CFrame.new(72.05, 29.00, 2950.63),
+    ["🎣 Silly Fisherman"] = CFrame.new(93.53, 27.24, 3009.08),
+    ["🐧 Scott"] = CFrame.new(-81.94, 4.80, 2866.59)
 }
+
+-- Smart NPC Selection: Use detected NPCs first, fallback if needed
+if next(detectedNPCs) then
+    local detectedCount = 0
+    for _ in pairs(detectedNPCs) do detectedCount = detectedCount + 1 end
+    
+    TeleportLocations.NPCs = detectedNPCs
+    print("XSAN: ✅ Using REAL-TIME detected NPC locations! Found", detectedCount, "NPCs")
+    NotifySuccess("NPC Detection", "✅ Real-time NPC locations detected!\n📍 " .. detectedCount .. " NPCs found with accurate positions.\n🔄 Auto-refresh: Active")
+    
+    -- Merge important fallback NPCs if not detected
+    for fallbackName, fallbackCFrame in pairs(fallbackNPCs) do
+        if not detectedNPCs[fallbackName] then
+            TeleportLocations.NPCs[fallbackName .. " (Fallback)"] = fallbackCFrame
+            print("XSAN: Added fallback NPC:", fallbackName)
+        end
+    end
+else
+    TeleportLocations.NPCs = fallbackNPCs
+    print("XSAN: ⚠️ Real-time detection failed - Using fallback NPC locations")
+    NotifyInfo("NPC Detection", "⚠️ Using fallback NPC locations.\n🔄 Real-time detection will retry automatically.\n📍 11 NPCs loaded from backup database")
+end
 
 TeleportLocations.Events = {
     ["🌟 Isonade Event"] = CFrame.new(-1442, 135, 1006),
@@ -852,6 +978,29 @@ local function TeleportToPlayer(targetPlayerName)
 end
 
 print("XSAN: Teleportation system initialized successfully!")
+
+-- Auto-refresh NPC locations system (Background task)
+task.spawn(function()
+    while true do
+        task.wait(30) -- Check every 30 seconds
+        pcall(function()
+            local updatedNPCs = DetectNPCLocations()
+            if next(updatedNPCs) then
+                local oldCount = 0
+                local newCount = 0
+                
+                for _ in pairs(TeleportLocations.NPCs) do oldCount = oldCount + 1 end
+                for _ in pairs(updatedNPCs) do newCount = newCount + 1 end
+                
+                -- Update if we found more NPCs or different locations
+                if newCount > oldCount then
+                    TeleportLocations.NPCs = updatedNPCs
+                    print("XSAN Auto-Refresh: Updated NPC locations -", newCount, "NPCs detected")
+                end
+            end
+        end)
+    end
+end)
 
 -- Count islands and print debug info
 local islandCount = 0
@@ -1202,6 +1351,52 @@ TeleportTab:CreateParagraph({
     Content = "Instantly teleport to important NPCs for trading, upgrades, and services. Save time with quick access!"
 })
 
+-- Refresh NPC Locations Button
+TeleportTab:CreateButton({
+    Name = "🔄 Refresh NPC Locations",
+    Callback = CreateSafeCallback(function()
+        -- Re-detect NPC locations
+        local newDetectedNPCs = DetectNPCLocations()
+        
+        if next(newDetectedNPCs) then
+            TeleportLocations.NPCs = newDetectedNPCs
+            local npcCount = 0
+            for _ in pairs(newDetectedNPCs) do npcCount = npcCount + 1 end
+            
+            NotifySuccess("NPC Refresh", "✅ NPC locations updated! Found " .. npcCount .. " NPCs with real-time positions.\n\n⚠️ Please reload the script to see updated buttons.")
+            
+            -- Print detected NPCs for debugging
+            print("XSAN: Updated NPC Locations:")
+            for name, cframe in pairs(newDetectedNPCs) do
+                print("  •", name, ":", cframe.Position)
+            end
+        else
+            NotifyError("NPC Refresh", "❌ No NPCs detected! Using fallback locations.\n\nTry moving closer to NPCs or check if you're in the right area.")
+        end
+    end, "refresh_npcs")
+})
+
+-- Show NPC Detection Info Button
+TeleportTab:CreateButton({
+    Name = "📍 Show NPC Detection Info",
+    Callback = CreateSafeCallback(function()
+        local npcInfo = "🔍 DETECTED NPC LOCATIONS:\n\n"
+        local npcCount = 0
+        
+        for npcName, cframe in pairs(TeleportLocations.NPCs) do
+            npcCount = npcCount + 1
+            local pos = cframe.Position
+            npcInfo = npcInfo .. string.format("📍 %s\n   Position: %.1f, %.1f, %.1f\n\n", npcName, pos.X, pos.Y, pos.Z)
+        end
+        
+        npcInfo = npcInfo .. "📊 Total NPCs: " .. npcCount .. "\n"
+        npcInfo = npcInfo .. "🔄 Auto-refresh: Every 30 seconds\n"
+        npcInfo = npcInfo .. "✅ Real-time detection active!"
+        
+        NotifyInfo("NPC Detection", npcInfo)
+    end, "show_npc_info")
+})
+
 -- Create buttons for each NPC
 for npcName, cframe in pairs(TeleportLocations.NPCs) do
     TeleportTab:CreateButton({
@@ -1262,35 +1457,70 @@ TeleportTab:CreateButton({
         end
         
         if playerCount > 0 then
-            NotifyInfo("Player List", "Players in server (" .. playerCount .. "):\n\n" .. playerList:sub(1, -3) .. "\n\n✅ Fixed teleportation system - Now using accurate locations!")
+            NotifyInfo("Player List", "Players in server (" .. playerCount .. "):\n\n" .. playerList:sub(1, -3) .. "\n\n✅ Player teleportation system ready!\n📝 Use manual input below to teleport to any player.")
         else
-            NotifyInfo("Player List", "❌ No other players found in the server!")
+            NotifyError("Player List", "❌ No other players found in the server!\n\n🔍 Make sure you're in a multiplayer server.\n⚠️ Some players might be loading or not have characters spawned.")
         end
+        
+        -- Note: Due to Rayfield limitations, please reload script to see updated quick buttons
+        NotifyInfo("UI Update", "💡 TIP: To see updated quick player buttons, reload the script.\n\n⚡ Quick buttons show first 5 players\n📝 Manual input works for all players")
     end, "refresh_players")
 })
 
--- Create dropdown/buttons for players
-local playerDropdown
-spawn(function()
-    while true do
-        wait(5) -- Update every 5 seconds
-        pcall(function()
-            if TeleportTab then
-                local players = {}
-                for _, player in pairs(game.Players:GetPlayers()) do
-                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        table.insert(players, player.Name)
-                    end
-                end
-                
-                if #players > 0 then
-                    -- Update player list (if dropdown exists, recreate it)
-                    -- For now, we'll use buttons since Rayfield dropdown might not support dynamic updates
-                end
+-- Quick Player Teleport Buttons (Top 5 Players)
+TeleportTab:CreateParagraph({
+    Title = "⚡ Quick Player Access",
+    Content = "Quick teleport buttons for players currently in the server. Use refresh to update the list!"
+})
+
+local function CreatePlayerButtons()
+    local players = {}
+    
+    -- Method 1: Check Characters folder first (like old.lua)
+    local charFolder = workspace:FindFirstChild("Characters")
+    if charFolder then
+        for _, playerModel in pairs(charFolder:GetChildren()) do
+            if playerModel:IsA("Model") and playerModel.Name ~= LocalPlayer.Name and playerModel:FindFirstChild("HumanoidRootPart") then
+                table.insert(players, playerModel.Name)
             end
-        end)
+        end
     end
-end)
+    
+    -- Method 2: Fallback to Players service
+    if #players == 0 then
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                table.insert(players, player.Name)
+            end
+        end
+    end
+    
+    -- Create buttons for first 5 players (to avoid UI clutter)
+    for i = 1, math.min(#players, 5) do
+        local playerName = players[i]
+        TeleportTab:CreateButton({
+            Name = "👤 " .. playerName,
+            Callback = CreateSafeCallback(function()
+                TeleportToPlayer(playerName)
+            end, "tp_player_" .. playerName)
+        })
+    end
+    
+    if #players > 5 then
+        TeleportTab:CreateParagraph({
+            Title = "📝 More Players Available",
+            Content = "There are " .. #players .. " players total. Use manual input below for others, or refresh to see different players."
+        })
+    elseif #players == 0 then
+        TeleportTab:CreateParagraph({
+            Title = "❌ No Players Found",
+            Content = "No other players detected in the server. Make sure you're in a multiplayer server!"
+        })
+    end
+end
+
+-- Initialize player buttons
+CreatePlayerButtons()
 
 -- Manual Player Teleport
 local targetPlayerName = ""
